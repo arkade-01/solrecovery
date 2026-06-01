@@ -21,6 +21,7 @@ export interface MintEntry {
   excessSol: number
   mintAuthority: string | null
   recoveryPath: RecoveryPath
+  symbol?: string
   launchpad?: string
 }
 

@@ -1,81 +1,44 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import type { MintEntry } from '@/lib/solana'
 
-interface LeaderboardData {
-  entries: MintEntry[]
-  total: number
-  lastUpdated: string | null
-  totalScanned: number
-}
-
 interface Props {
-  initial: LeaderboardData
+  initial: {
+    entries: MintEntry[]
+    total: number
+    lastUpdated: string | null
+    totalScanned: number
+  }
 }
 
-const RECOVERY_LABELS: Record<string, string> = {
-  authority: 'Mint authority',
-  keypair: 'Mint keypair',
-}
+const LIMIT = 20
 
 function shortAddress(addr: string) {
   return `${addr.slice(0, 4)}…${addr.slice(-4)}`
 }
 
 function formatSol(sol: number) {
-  return sol.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+  return sol.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 export function LeaderboardTable({ initial }: Props) {
-  const [data, setData] = useState<LeaderboardData>(initial)
-  const [loading, setLoading] = useState(false)
-  const [recovery, setRecovery] = useState<string>('')
   const [offset, setOffset] = useState(0)
-  const LIMIT = 20
 
-  const load = useCallback(async (newOffset: number, newRecovery: string) => {
-    setLoading(true)
-    const params = new URLSearchParams({ limit: String(LIMIT), offset: String(newOffset) })
-    if (newRecovery) params.set('recovery', newRecovery)
-    const res = await fetch(`/api/leaderboard?${params}`)
-    const json = await res.json()
-    setData(json)
-    setOffset(newOffset)
-    setLoading(false)
-  }, [])
-
-  function handleFilter(value: string) {
-    setRecovery(value)
-    load(0, value)
-  }
+  // All filtering/pagination is client-side — data comes from the static CSV
+  const page = useMemo(
+    () => initial.entries.slice(offset, offset + LIMIT),
+    [initial.entries, offset]
+  )
 
   return (
     <section>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-semibold">Top recoverable mints</h2>
-          {data.lastUpdated && (
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Last scanned {new Date(data.lastUpdated).toLocaleString()} · {data.totalScanned.toLocaleString()} mints checked
-            </p>
-          )}
-        </div>
-
-        <div className="flex gap-2 text-sm">
-          {[['', 'All'], ['keypair', 'Keypair'], ['authority', 'Authority']].map(([val, label]) => (
-            <button
-              key={val}
-              onClick={() => handleFilter(val)}
-              className={`px-3 py-1 rounded-full border transition-colors ${
-                recovery === val
-                  ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100'
-                  : 'border-zinc-300 text-zinc-600 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-400'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          <p className="text-xs text-zinc-500 mt-0.5">
+            {initial.entries.length} mints · look up any address below to check live auth state
+          </p>
         </div>
       </div>
 
@@ -83,76 +46,63 @@ export function LeaderboardTable({ initial }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-zinc-50 dark:bg-zinc-900 text-zinc-500 text-xs uppercase tracking-wide">
-              <th className="px-4 py-3 text-left w-10">#</th>
-              <th className="px-4 py-3 text-left">Mint address</th>
+              <th className="px-4 py-3 text-left w-8">#</th>
+              <th className="px-4 py-3 text-left">Token</th>
+              <th className="px-4 py-3 text-left hidden sm:table-cell">Mint address</th>
               <th className="px-4 py-3 text-right">Excess SOL</th>
-              <th className="px-4 py-3 text-left">Recovery path</th>
-              <th className="px-4 py-3 text-left">Launchpad</th>
+              <th className="px-4 py-3 text-left hidden md:table-cell">Launchpad</th>
             </tr>
           </thead>
-          <tbody className={loading ? 'opacity-50' : ''}>
-            {data.entries.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-400">
-                  {data.totalScanned === 0
-                    ? 'No data yet — trigger a scan to populate the leaderboard.'
-                    : 'No results for this filter.'}
+          <tbody>
+            {page.map((entry, i) => (
+              <tr
+                key={entry.address}
+                className="border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+              >
+                <td className="px-4 py-3 text-zinc-400 tabular-nums">{offset + i + 1}</td>
+                <td className="px-4 py-3">
+                  <a
+                    href={`https://solscan.io/token/${entry.address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium hover:underline"
+                  >
+                    {entry.symbol ?? '—'}
+                  </a>
+                </td>
+                <td className="px-4 py-3 hidden sm:table-cell">
+                  <span className="font-mono text-xs text-zinc-500" title={entry.address}>
+                    {shortAddress(entry.address)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                  ◎ {formatSol(entry.excessSol)}
+                </td>
+                <td className="px-4 py-3 hidden md:table-cell text-zinc-500 capitalize">
+                  {entry.launchpad ?? '—'}
                 </td>
               </tr>
-            ) : (
-              data.entries.map((entry, i) => (
-                <tr
-                  key={entry.address}
-                  className="border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
-                >
-                  <td className="px-4 py-3 text-zinc-400">{offset + i + 1}</td>
-                  <td className="px-4 py-3 font-mono">
-                    <a
-                      href={`https://solscan.io/token/${entry.address}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline text-zinc-700 dark:text-zinc-300"
-                      title={entry.address}
-                    >
-                      {shortAddress(entry.address)}
-                    </a>
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono font-medium text-emerald-700 dark:text-emerald-400">
-                    ◎ {formatSol(entry.excessSol)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        entry.recoveryPath === 'authority'
-                          ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                          : 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                      }`}
-                    >
-                      {RECOVERY_LABELS[entry.recoveryPath]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500 capitalize">{entry.launchpad || '—'}</td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>
 
-      {data.total > LIMIT && (
+      {initial.entries.length > LIMIT && (
         <div className="flex items-center justify-between mt-4 text-sm text-zinc-500">
-          <span>{data.total.toLocaleString()} total mints with excess SOL</span>
+          <span>
+            {offset + 1}–{Math.min(offset + LIMIT, initial.entries.length)} of {initial.entries.length}
+          </span>
           <div className="flex gap-2">
             <button
-              disabled={offset === 0 || loading}
-              onClick={() => load(offset - LIMIT, recovery)}
+              disabled={offset === 0}
+              onClick={() => setOffset((o) => Math.max(0, o - LIMIT))}
               className="px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700 disabled:opacity-40 hover:border-zinc-500 transition-colors"
             >
               ← Prev
             </button>
             <button
-              disabled={offset + LIMIT >= data.total || loading}
-              onClick={() => load(offset + LIMIT, recovery)}
+              disabled={offset + LIMIT >= initial.entries.length}
+              onClick={() => setOffset((o) => o + LIMIT)}
               className="px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700 disabled:opacity-40 hover:border-zinc-500 transition-colors"
             >
               Next →

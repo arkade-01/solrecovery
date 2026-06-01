@@ -16,7 +16,7 @@ if (typeof globalThis !== 'undefined' && !globalThis.Buffer) {
   globalThis.Buffer = Buffer
 }
 
-const RPC_ENDPOINT = process.env.NEXT_PUBLIC_HELIUS_RPC_URL ?? 'https://api.mainnet-beta.solana.com'
+const RPC_ENDPOINT = '/api/rpc'
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   const wallets = useMemo(

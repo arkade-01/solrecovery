@@ -1,12 +1,10 @@
-import data from '@/lib/leaderboard-data.json'
-import type { MintEntry } from '@/lib/solana'
+import { TOP_MINTS } from '@/lib/tokens'
 import { LeaderboardTable } from './LeaderboardTable'
 
 export function LeaderboardSection() {
-  const entries = data as MintEntry[]
   return (
     <LeaderboardTable
-      initial={{ entries, total: entries.length, lastUpdated: null, totalScanned: 0 }}
+      initial={{ entries: TOP_MINTS, total: TOP_MINTS.length, lastUpdated: null, totalScanned: 0 }}
     />
   )
 }
