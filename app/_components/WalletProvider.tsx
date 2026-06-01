@@ -1,7 +1,7 @@
 'use client'
 
 import { Buffer } from 'buffer'
-import { useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ConnectionProvider, WalletProvider as SolanaWalletProvider } from '@solana/wallet-adapter-react'
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
 import {
@@ -11,21 +11,28 @@ import {
 } from '@solana/wallet-adapter-wallets'
 import '@solana/wallet-adapter-react-ui/styles.css'
 
-// Inject Buffer globally for @solana/web3.js client-side usage
 if (typeof globalThis !== 'undefined' && !globalThis.Buffer) {
   globalThis.Buffer = Buffer
 }
 
-const RPC_ENDPOINT = '/api/rpc'
-
 export function WalletProvider({ children }: { children: React.ReactNode }) {
+  // Defer to client-side only — @solana/web3.js rejects relative URLs during SSR prerender.
+  // window.location.origin works on localhost and any deployment without any env vars.
+  const [endpoint, setEndpoint] = useState<string | null>(null)
+
+  useEffect(() => {
+    setEndpoint(`${window.location.origin}/api/rpc`)
+  }, [])
+
   const wallets = useMemo(
     () => [new PhantomWalletAdapter(), new SolflareWalletAdapter(), new CoinbaseWalletAdapter()],
     []
   )
 
+  if (!endpoint) return <>{children}</>
+
   return (
-    <ConnectionProvider endpoint={RPC_ENDPOINT}>
+    <ConnectionProvider endpoint={endpoint}>
       <SolanaWalletProvider wallets={wallets} autoConnect={false}>
         <WalletModalProvider>{children}</WalletModalProvider>
       </SolanaWalletProvider>
