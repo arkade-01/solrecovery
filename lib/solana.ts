@@ -7,7 +7,7 @@ export const MINT_ACCOUNT_SIZE = 82
 // Fetched at runtime via getMinimumBalanceForRentExemption, but this is the approximate value.
 export const APPROXIMATE_RENT_EXEMPT_LAMPORTS = 1_461_600
 
-export const PLATFORM_FEE_BPS = 700 // 7%
+export const PLATFORM_FEE_BPS = 1000 // 10%
 
 export const KNOWN_LAUNCHPADS: Record<string, string> = {
   '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P': 'pumpfun',
