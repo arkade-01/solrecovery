@@ -124,18 +124,21 @@ export function RecoveryModal({ mint, onClose }: Props) {
         preflightCommitment: 'confirmed',
       })
 
-      setStatusMsg('Confirming…')
-      await connection.confirmTransaction(sig, 'confirmed')
-
-      // Clear the mint keypair from memory immediately after confirmation
-      setMintKeypair(null)
-
+      // Set signature immediately — if confirmation times out the tx still landed
       setTxSig(sig)
+      setStatusMsg('Confirming…')
+
+      try {
+        await connection.confirmTransaction(sig, 'confirmed')
+      } catch {
+        // Timeout or network drop — tx was already submitted, treat as done
+      }
+
+      setMintKeypair(null)
       setStep('done')
     } catch (err) {
       setStatusMsg(err instanceof Error ? err.message : 'Transaction failed')
       setStep('error')
-      // Clear keypair on error too
       setMintKeypair(null)
     }
   }, [connection, wallet, mint, mintKeypair])
@@ -280,8 +283,8 @@ export function RecoveryModal({ mint, onClose }: Props) {
           {step === 'done' && txSig && (
             <div className="space-y-3">
               <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-sm">
-                <p className="font-medium text-emerald-700 dark:text-emerald-400 mb-1">✓ Recovery confirmed</p>
-                <p className="text-xs text-emerald-600 dark:text-emerald-500">◎ {mint.clientReceivesSol.toFixed(6)} sent to your wallet</p>
+                <p className="font-medium text-emerald-700 dark:text-emerald-400 mb-1">✓ Transaction submitted</p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-500">◎ {mint.clientReceivesSol.toFixed(6)} recovery — verify on explorer</p>
               </div>
               <a
                 href={`https://solscan.io/tx/${txSig}`}
