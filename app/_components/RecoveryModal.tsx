@@ -171,7 +171,7 @@ export function RecoveryModal({ mint, onClose }: Props) {
               <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">◎ {mint.clientReceivesSol.toFixed(6)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-zinc-500">Platform fee (7%)</span>
+              <span className="text-zinc-500">Platform fee (10%)</span>
               <span className="font-mono text-zinc-400">◎ {mint.platformFeeSol.toFixed(6)}</span>
             </div>
           </div>

@@ -21,7 +21,7 @@ export default function Home() {
             { label: "Total bricked SOL", value: "~176,961 ◎" },
             { label: "Affected mints", value: "~869,000" },
             { label: "Rent-exempt floor", value: "0.00146 ◎" },
-            { label: "Platform fee", value: "7%" },
+            { label: "Platform fee", value: "10%" },
           ].map(({ label, value }) => (
             <div
               key={label}
@@ -49,7 +49,7 @@ export default function Home() {
               required. It never leaves your browser.
             </li>
             <li>
-              Recovered SOL is split atomically: ~93% to you, 7% platform fee.
+              Recovered SOL is split atomically: 90% to you, 10% platform fee.
             </li>
             <li>
               No upfront cost. Only the Solana transaction fee (~0.000005 ◎).

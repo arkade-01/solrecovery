@@ -115,7 +115,7 @@ export function MintLookup() {
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-zinc-500">Platform fee (7%)</span>
+                  <span className="text-zinc-500">Platform fee (10%)</span>
                   <span className="font-mono text-xs text-zinc-500">◎ {result.platformFeeSol.toFixed(6)}</span>
                 </div>
               </div>
